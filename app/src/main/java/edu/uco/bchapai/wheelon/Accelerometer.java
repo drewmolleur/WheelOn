@@ -28,23 +28,23 @@ public class Accelerometer {
 
     }
 
-    private float getAccelerometer(int i){
+    public float getAccelerometer(int i){
         return this.accelerometer[i];
     }
 
-    private float[] getAccelerometer(){
+    public float[] getAccelerometer(){
         return accelerometer;
     }
 
-    private void setAccelerometer(float[] accelerometer){
+    public void setAccelerometer(float[] accelerometer){
         this.accelerometer = accelerometer;
     }
 
-    private long getTime(){
+    public long getTime(){
         return time;
     }
 
-    private void setTime(long t){
+    public void setTime(long t){
         this.time = t;
     }
 }

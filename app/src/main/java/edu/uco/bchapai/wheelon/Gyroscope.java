@@ -28,23 +28,23 @@ public class Gyroscope {
 
     }
 
-    private float getGyroscope(int i){
+    public float getGyroscope(int i){
         return this.gyroscope[i];
     }
 
-    private float[] getGyroscope(){
+    public float[] getGyroscope(){
         return gyroscope;
     }
 
-    private void setGyroscope(float[] gyroscope){
+    public void setGyroscope(float[] gyroscope){
         this.gyroscope = gyroscope;
     }
 
-    private long getTime(){
+    public long getTime(){
         return time;
     }
 
-    private void setTime(long t){
+    public void setTime(long t){
         this.time = t;
     }
 }
