@@ -5,46 +5,46 @@ package edu.uco.bchapai.wheelon;
  */
 
 public class Accelerometer {
-
+    
     private float[] accelerometer;
     private long time;
 
+    
     public Accelerometer(){
         this.accelerometer = new float[3];
     }
 
-    public Accelerometer(float[] accelerometer, long time){
+    public Accelerometer(long time, float[] accelerometer){
+        this.accelerometer = new float[3];
+        this.time = new Long(time);
+    }
+
+    public Accelerometer(long time, float xA, float yA, float zA){
+        this.time = time;
+        this.accelerometer = new float[3];
+        this.accelerometer[0] = xA;
+        this.accelerometer[1] = yA;
+        this.accelerometer[2] = zA;
+        
+    }
+    protected float[] getAccelerometer(){
+        return this.accelerometer;
+    }
+
+    protected void setAccelerometer(float[] accelerometer){
         this.accelerometer = accelerometer;
+    }
+
+    protected float getAccelerometer(int index){
+        return this.accelerometer[index];
+    }
+
+    protected void setTime(long time){
         this.time = time;
     }
 
-    public Accelerometer(float x, float y, float z, long t){
-        this.accelerometer = new float[3];
-        this.accelerometer[0] = x;
-        this.accelerometer[1] = y;
-        this.accelerometer[2] = z;
-        this.time = t;
-
-
+    protected long getTime(){
+        return this.time;
     }
-
-    public float getAccelerometer(int i){
-        return this.accelerometer[i];
-    }
-
-    public float[] getAccelerometer(){
-        return accelerometer;
-    }
-
-    public void setAccelerometer(float[] accelerometer){
-        this.accelerometer = accelerometer;
-    }
-
-    public long getTime(){
-        return time;
-    }
-
-    public void setTime(long t){
-        this.time = t;
-    }
+    
 }

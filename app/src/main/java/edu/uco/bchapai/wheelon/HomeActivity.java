@@ -1,16 +1,17 @@
 package edu.uco.bchapai.wheelon;
 
 import android.app.Activity;
+import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.TextView;
@@ -21,209 +22,204 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Time;
-import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class HomeActivity extends Activity implements SensorEventListener{
 
+    // variables to hold the accelerometer, gyroscope and timestamp data
+    private ArrayList<Accelerometer> aRecord;
+    private ArrayList<Gyroscope> gRecord;
+    float mAccl[] = new float[3];
+    float mGyro[] = new float[3];
+    private long timestamp;
 
-    private TextView xAView, yAView, zAView, xGView, yGView, zGView;
+    private Sensor accelerometer, gyroscope; // actual sensor object on phone
+    private int aCount, gCount; // Counters for data rows collected by each sensor      /////////////////////////
 
-    String fileName;
-    private long timer;
+    Button btnStart,btnAnalyze,btnStop;
+
+    private String fileName;     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    private TextToSpeech talker; // text to speech
+    private SensorManager sensorManager; // for setting the sensor delay
+
+    private boolean buttonRecord = false; // check if the data are being read or not
+
+    private TextView textAcclX, textAcclY, textAcclZ, textGyroX, textGyroY, textGyroZ, textViewStatus;
+    private Chronometer chronometerRecord;
     
-    boolean isStarted = false;
-
-    private Sensor accelerometer;
-    private Sensor gyroscope;
-    private SensorManager accelManager, gyroManager;
-    Button btnStart, btnStop, btnAnalyze;
-    private Chronometer chronometer;
-
-    // this adds the countdown timer for the start button
-    private CountDownTimer countDownTimer;
-
-    TextToSpeech toSpeech;
-    int result;
-    String text;
-
-    Date date;
-
-    ArrayList<Accelerometer> accelData;
-    ArrayList<Gyroscope> gyroData;
-
-    private boolean hasStarted = false;
-    private boolean hasStopped = false;
-
-    float accel[] = new float[3];
-    float gyro[] = new float[3];
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        accelData = new ArrayList<Accelerometer>();
-        gyroData = new ArrayList<Gyroscope>();
-
         btnStart = (Button) findViewById(R.id.startbtn);
-        btnAnalyze = (Button) findViewById(R.id.btnAnalyze);
-        btnStop = (Button) findViewById(R.id.stopbtn);
+        btnAnalyze = (Button) findViewById(R.id.analyzebtn);
+        btnStop = (Button) findViewById(R.id.endbtn);
 
-        accelData = new ArrayList<Accelerometer>();
-        gyroData = new ArrayList<Gyroscope>();
+        aRecord = new ArrayList<Accelerometer>();
+        gRecord = new ArrayList<Gyroscope>();
+        aCount = 0;
+        gCount = 0;
 
-        accelManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometer = accelManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        accelManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        // GUI Items
 
-        // Assigning textviews
-        xAView = (TextView) findViewById(R.id.xA);
-        yAView = (TextView) findViewById(R.id.yA);
-        zAView = (TextView) findViewById(R.id.zA);
+        textAcclX = (TextView) findViewById(R.id.xA);
+        textAcclY = (TextView) findViewById(R.id.yA);
+        textAcclZ = (TextView) findViewById(R.id.zA);
+        textGyroX = (TextView) findViewById(R.id.xG);
+        textGyroY = (TextView) findViewById(R.id.yG);
+        textGyroZ = (TextView) findViewById(R.id.zG);
 
-        gyroManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        gyroscope = gyroManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        gyroManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_UI);
+        textViewStatus = (TextView) findViewById(R.id.textViewStatus);
 
+        chronometerRecord = (Chronometer) findViewById(R.id.chronometerRecord);
+        // Get the sensor manager from the system service
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        xGView = (TextView) findViewById(R.id.xG);
-        yGView = (TextView) findViewById(R.id.yG);
-        zGView = (TextView) findViewById(R.id.zG);
+        // check if accelerometer is present on device
+        if(sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER).size() == 0){
+            textViewStatus.setText("No Accelerometer installed");
+        } else { // register listener, set sensor delays
 
+            accelerometer = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER).get(0);
+            gyroscope = sensorManager.getSensorList(Sensor.TYPE_GYROSCOPE).get(0);
+
+            if(!sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)){
+                // SensorManager.SENSOR_DELAY_NORMAL
+                textViewStatus.setText("Couldn't register accelerometer sensor listener");
+
+            }else if(! sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_UI)){
+                textViewStatus.setText("Couldn't register gyroscope sensor listener");
+
+            }
+        }
 
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                isStarted = true;
-                chronometer.setBase(SystemClock.elapsedRealtime());
-                chronometer.start();
+                buttonRecord = true;
+                chronometerRecord.setBase(SystemClock.elapsedRealtime());
+                chronometerRecord.start();
+                textViewStatus.setText("Recording");
             }
         });
 
         btnStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                isStarted = false;
-                chronometer.stop();
-                chronometer.setBase(SystemClock.elapsedRealtime());
-                accelData.clear();
-                gyroData.clear();
+                buttonRecord = false;
+                chronometerRecord.stop();
+                chronometerRecord.setBase(SystemClock.elapsedRealtime());
 
-                saveData(toString());
-            }
-        });
+                logReadings(convertRecords());
 
-        btnAnalyze.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
+                aRecord.clear();
+                gRecord.clear();
             }
         });
 
     }
 
+    private String convertRecords() {
+
+        StringBuilder stringRecords = new StringBuilder();
+
+        for(int i = 0; i < aRecord.size(); i++){
+            if(i < gRecord.size()){
+                stringRecords.append(aRecord.get(i).getAccelerometer(0));
+                stringRecords.append("," + aRecord.get(i).getAccelerometer(1));
+                stringRecords.append("," + aRecord.get(i).getAccelerometer(2));
+                stringRecords.append("," + aRecord.get(i).getTime());
+                stringRecords.append("," + gRecord.get(i).getGyroscope(0));
+                stringRecords.append("," + gRecord.get(i).getGyroscope(1));
+                stringRecords.append("," + gRecord.get(i).getGyroscope(2));
+                stringRecords.append("," + gRecord.get(i).getTime() + "\n");
+            }
+        }
+
+        return stringRecords.toString();
+    }
+
+    private void logReadings(String readings){
+        try{
+            File root = Environment.getExternalStorageDirectory();
+            if(root.canWrite()){
+                System.out.println("Can Write");
+                java.util.Date date = new java.util.Date();
+                Timestamp ts = new Timestamp(date.getTime());
+
+                String datetime = new java.text.SimpleDateFormat("dd_MM_yyyy_HH_mm_ss").format(ts);
+                fileName = "WheelOnLog" + datetime + ".csv";
+                File gpxfile = new File(root, fileName);
+                FileWriter gpxWriter = new FileWriter(gpxfile);
+
+                BufferedWriter out = new BufferedWriter(gpxWriter);
+                out.write(readings);
+                Toast.makeText(this,"Data is saved as " + fileName, Toast.LENGTH_SHORT).show();
+                out.close();
+            }else{
+                Toast.makeText(this, "NO SD card Available", Toast.LENGTH_SHORT).show();
+                System.out.println("Can NOT write");
+            }
+        } catch (IOException e) {
+            System.out.println("could not log readings");
+        }
+    }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-        date = new Date(); // for timer
+        java.util.Date date = new java.util.Date(); // for timestamp
 
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            accel = event.values;
+            mAccl = event.values;
 
-            xAView.setText("X: " + accel[0]);
-            yAView.setText("Y: " + accel[1]);
-            zAView.setText("Z: " + accel[2]);
+            textAcclX.setText("X: " + mAccl[0]);
+            textAcclY.setText("Y: " + mAccl[1]);
+            textAcclZ.setText("Z: " + mAccl[2]);
 
-            if(isStarted == true && event.sensor.equals(accelerometer)){
-                if(timer != date.getTime()){
-                    timer = date.getTime();
-                    accelData.add(new Accelerometer(accel,timer));
+
+            if(buttonRecord == true && event.sensor.equals(accelerometer)){
+                if(timestamp != date.getTime()){
+                    timestamp = date.getTime();
+                    aRecord.add(new Accelerometer(timestamp, mAccl));
+                    aCount++;
+
+                    if(aCount > gCount + 1){
+                        for(int i = 0; i < 3; i++){
+                            mGyro[i] = 0.0f;
+                        }
+                        gRecord.add(new Gyroscope(0, mGyro));
+                        gCount++;
+                    }
                 }
+
             }
         }
         if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
 
-            gyro = event.values;
+            mGyro = event.values;
 
-            // display gyroscope value to the GUI
+            textGyroX.setText("Pitch (X): " + mGyro[0]);
+            textGyroY.setText("Roll (Y): " + mGyro[1]);
+            textGyroZ.setText("Yaw (Z): " + mGyro[2]);
 
-            xGView.setText("Pitch (X): " + gyro[0]);
-            yGView.setText("Roll (Y): " + gyro[1]);
-            zGView.setText("Yaw (Z): " + gyro[2]);
 
-            // if recording is enabled, add the values to the arraylist
-
-            if(isStarted == true && event.sensor.equals(gyroscope)){
-                if(timer != date.getTime()){
-                    timer = date.getTime();
-                    gyroData.add(new Gyroscope(gyro,timer));
+            if(buttonRecord == true && event.sensor.equals(gyroscope)){
+                if(timestamp != date.getTime()){
+                    timestamp = date.getTime();
+                    gRecord.add(new Gyroscope(timestamp, mGyro));
+                    gCount++;
                 }
             }
 
         }
+        
     }
-
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
-
-    public String toString(){
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < accelData.size();i++){
-            if(i < gyroData.size()){
-                sb.append(accelData.get(i).getAccelerometer(0) + ",");
-                sb.append(accelData.get(i).getAccelerometer(1) + ",");
-                sb.append(accelData.get(i).getAccelerometer(2) + ",");
-                sb.append(accelData.get(i).getTime() + ",");
-
-                sb.append(gyroData.get(i).getGyroscope(0) + ",");
-                sb.append(gyroData.get(i).getGyroscope(1) + ",");
-                sb.append(gyroData.get(i).getGyroscope(2) + ",");
-                sb.append(gyroData.get(i).getTime() + "/n");
-
-            }
-        }
-        return sb.toString();
-
-        //*****************************************
-
-    }
-
-    private void saveData(String data){
-        try {
-            File file = Environment.getExternalStorageDirectory();
-
-            if(file.canWrite()){
-                Date date = new Date();
-                Time time = new Time(date.getTime());
-
-                String dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(time);
-
-                fileName = "WheelOnData" + dateFormat + ".csv";
-
-                File newFile = new File(file,fileName);
-                FileWriter fileWriter = new FileWriter(newFile);
-
-                BufferedWriter bufferedWriter = new BufferedWriter((fileWriter));
-                bufferedWriter.write(data);
-                bufferedWriter.close();
-
-            }
-            else{
-                Toast.makeText(getApplicationContext(),"Error writing the data",Toast.LENGTH_SHORT);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(getApplicationContext(),"Error Saving the File",Toast.LENGTH_SHORT);
-        }
-    }
-
 }

@@ -8,43 +8,38 @@ public class Gyroscope {
 
     private float[] gyroscope;
     private long time;
-
+    
     public Gyroscope(){
         this.gyroscope = new float[3];
     }
-
-    public Gyroscope(float[] gyroscope, long time){
-        this.gyroscope = gyroscope;
-        this.time = time;
+    public Gyroscope (long time, float[] gyroscope){
+        this.gyroscope = new float[3];
+        this.time = new Long(time);
     }
 
-    public Gyroscope(float x, float y, float z, long t){
+    public Gyroscope (long time, float x, float y, float z){
         this.gyroscope = new float[3];
+        this.time = time;
         this.gyroscope[0] = x;
         this.gyroscope[1] = y;
         this.gyroscope[2] = z;
-        this.time = t;
-
-
     }
-
-    public float getGyroscope(int i){
-        return this.gyroscope[i];
-    }
-
-    public float[] getGyroscope(){
+    protected float[] getGyroscope(){
         return gyroscope;
     }
 
-    public void setGyroscope(float[] gyroscope){
+    protected void setGyroscope (float[] gyroscope){
         this.gyroscope = gyroscope;
     }
 
-    public long getTime(){
+    protected float getGyroscope(int index){
+        return this.gyroscope[index];
+    }
+    protected long getTime(){
         return time;
     }
-
-    public void setTime(long t){
-        this.time = t;
+    protected void setTime (long timeStamp){
+        this.time = time;
     }
+    
 }
