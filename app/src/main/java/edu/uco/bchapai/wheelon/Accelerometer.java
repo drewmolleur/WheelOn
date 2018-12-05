@@ -1,7 +1,7 @@
 package edu.uco.bchapai.wheelon;
 
 /**
- * Created by Biwash on 11/12/2018.
+ * Created by Biwash on 10/12/2018.
  */
 
 public class Accelerometer {
