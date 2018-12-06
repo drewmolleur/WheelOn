@@ -15,6 +15,7 @@ public class Gyroscope {
     public Gyroscope (long time, float[] gyroscope){
         this.gyroscope = new float[3];
         this.time = new Long(time);
+        this.gyroscope = gyroscope.clone();
     }
 
     public Gyroscope (long time, float x, float y, float z){

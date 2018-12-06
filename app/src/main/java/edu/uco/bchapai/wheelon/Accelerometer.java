@@ -5,9 +5,9 @@ package edu.uco.bchapai.wheelon;
  */
 
 public class Accelerometer {
-    
-    private float[] accelerometer;
+
     private long time;
+    private float[] accelerometer;
 
     
     public Accelerometer(){
@@ -17,6 +17,7 @@ public class Accelerometer {
     public Accelerometer(long time, float[] accelerometer){
         this.accelerometer = new float[3];
         this.time = new Long(time);
+        this.accelerometer = accelerometer.clone();
     }
 
     public Accelerometer(long time, float xA, float yA, float zA){
