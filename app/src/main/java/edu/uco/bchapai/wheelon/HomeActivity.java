@@ -2,6 +2,7 @@ package edu.uco.bchapai.wheelon;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -14,6 +15,8 @@ import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.apache.commons.net.ftp.FTPClient;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -31,6 +34,9 @@ public class HomeActivity extends Activity implements SensorEventListener{
     float gyroValue[] = new float[3];
     private long timestamp;
 
+    public FTPClient mFTPClient = null;
+    String result;
+
     private Sensor accelerometer, gyroscope;
     private int accelCounter, gyroCounter;
 
@@ -44,9 +50,24 @@ public class HomeActivity extends Activity implements SensorEventListener{
     private TextView xAText, yAText, zAText, xGText, yGText, zGText, textViewStatus;
     private Chronometer chronometer;
 
+    public double mCounter, sCounter;
+    public double mDuration, sDuration;
+
+    /*private static final String TAG = "MyFTPClientFunctions";
+
+    public boolean ftpChangeDirectory(String directory_path) {
+        try {
+            mFTPClient.changeWorkingDirectory(directory_path);
+        } catch (Exception e) {
+            Log.d(TAG, "Error: could not change directory to " + directory_path);
+        }
+
+        return false;
+    }*/
+
     Date date;
 
-    StringBuilder stringyroDatas;
+    StringBuilder stringData;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,26 +128,81 @@ public class HomeActivity extends Activity implements SensorEventListener{
             }
         });
 
+        btnAnalyze.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent;
+                startActivity(new Intent(getApplicationContext(),MainActivity.class));
+            }
+        });
+
     }
 
     private String convertRecords() {
 
-        stringyroDatas = new StringBuilder();
+        stringData = new StringBuilder();
+
+        float xInitial,yInitial,zInitial;
+
+        sCounter = 0;
+        mCounter = 0;
+
+
+        xInitial = accelData.get(0).getAccelerometer(0);
+        yInitial = accelData.get(0).getAccelerometer(1);
+        zInitial = accelData.get(0).getAccelerometer(2);
+
+
+
+
 
         for(int i = 0; i < accelData.size(); i++){
+//                if(accelData.get(i).getAccelerometer(0) == 0.0 ){
+//                    if(accelData.get(i).getAccelerometer(1) == 9.81){
+//                        if(accelData.get(i).getAccelerometer(2) == 0.0){
+//                            result = "Stationary";
+//                        }
+//                    }
+//                }
+                if(accelData.get(i).getAccelerometer(0) == xInitial){
+
+                    if(accelData.get(i).getAccelerometer(1) == yInitial){
+
+                        if(accelData.get(i).getAccelerometer(2) == zInitial){
+                            result = "Stationary";
+                            xInitial = accelData.get(i).getAccelerometer(0);
+                            yInitial = accelData.get(i).getAccelerometer(1);
+                            zInitial = accelData.get(i).getAccelerometer(2);
+
+                            sCounter++;
+                        }
+                    }
+                }
+
+                else{
+                    result = "Moving";
+                    mCounter++;
+                }
+
+                mDuration = mCounter/1000;
+                sDuration = sCounter/1000;
+
             if(i < gyroData.size()){
-                stringyroDatas.append(accelData.get(i).getAccelerometer(0));
-                stringyroDatas.append("," + accelData.get(i).getAccelerometer(1));
-                stringyroDatas.append("," + accelData.get(i).getAccelerometer(2));
-                stringyroDatas.append("," + accelData.get(i).getTime());
-                stringyroDatas.append("," + gyroData.get(i).getGyroscope(0));
-                stringyroDatas.append("," + gyroData.get(i).getGyroscope(1));
-                stringyroDatas.append("," + gyroData.get(i).getGyroscope(2));
-                stringyroDatas.append("," + gyroData.get(i).getTime() + "\n");
+                stringData.append(accelData.get(i).getAccelerometer(0));
+                stringData.append("," + accelData.get(i).getAccelerometer(1));
+                stringData.append("," + accelData.get(i).getAccelerometer(2));
+                stringData.append("," + accelData.get(i).getTime());
+                stringData.append("," + gyroData.get(i).getGyroscope(0));
+                stringData.append("," + gyroData.get(i).getGyroscope(1));
+                stringData.append("," + gyroData.get(i).getGyroscope(2));
+                stringData.append("," + gyroData.get(i).getTime());
+                stringData.append("," + mDuration + " seconds moving");
+                stringData.append("," + sDuration + " seconds stationary");
+                stringData.append("," + result + "\n");
             }
         }
 
-        return stringyroDatas.toString();
+        return stringData.toString();
 
     }
 
@@ -139,8 +215,19 @@ public class HomeActivity extends Activity implements SensorEventListener{
                 Timestamp ts = new Timestamp(date.getTime());
 
                 String datetime = new java.text.SimpleDateFormat("dd_MM_yyyy_HH_mm_ss").format(ts);
-                fileName = "WheelOn_Log" + datetime + ".csv";
+                fileName = "mostrecent.csv";
                 File gpxfile = new File(root, fileName);
+
+                System.out.println(fileName.toString());
+
+                String file = fileName.toString();
+
+                Intent intent1 = new Intent(this, MainActivity.class);
+                intent1.putExtra("FILE",file);
+                intent1.putExtra("DATA", gpxfile);
+                startActivity(intent1);
+                //ftpChangeDirectory("/site/wwwroot");
+
                 FileWriter gpxWriter = new FileWriter(gpxfile);
 
                 BufferedWriter out = new BufferedWriter(gpxWriter);
