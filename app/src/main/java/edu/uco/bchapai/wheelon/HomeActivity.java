@@ -7,6 +7,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
@@ -35,6 +36,7 @@ public class HomeActivity extends Activity implements SensorEventListener{
     private long timestamp;
 
     public FTPClient mFTPClient = null;
+
     String result;
 
     private Sensor accelerometer, gyroscope;
@@ -50,24 +52,11 @@ public class HomeActivity extends Activity implements SensorEventListener{
     private TextView xAText, yAText, zAText, xGText, yGText, zGText, textViewStatus;
     private Chronometer chronometer;
 
-    public double mCounter, sCounter;
-    public double mDuration, sDuration;
-
-    /*private static final String TAG = "MyFTPClientFunctions";
-
-    public boolean ftpChangeDirectory(String directory_path) {
-        try {
-            mFTPClient.changeWorkingDirectory(directory_path);
-        } catch (Exception e) {
-            Log.d(TAG, "Error: could not change directory to " + directory_path);
-        }
-
-        return false;
-    }*/
-
     Date date;
 
     StringBuilder stringData;
+
+    private  static final String TAG = "MyFTPClientFunctions";
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,31 +120,23 @@ public class HomeActivity extends Activity implements SensorEventListener{
         btnAnalyze.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent;
-                startActivity(new Intent(getApplicationContext(),MainActivity.class));
+                Intent browserIntent = new Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("http://wheelon.azurewebsites.net"));
+                startActivity(browserIntent);
             }
         });
 
     }
 
-    private String convertRecords() {
+    public String convertRecords() {
 
         stringData = new StringBuilder();
 
         float xInitial,yInitial,zInitial;
-
-        sCounter = 0;
-        mCounter = 0;
-
-
         xInitial = accelData.get(0).getAccelerometer(0);
         yInitial = accelData.get(0).getAccelerometer(1);
         zInitial = accelData.get(0).getAccelerometer(2);
-
-
-
-
-
         for(int i = 0; i < accelData.size(); i++){
 //                if(accelData.get(i).getAccelerometer(0) == 0.0 ){
 //                    if(accelData.get(i).getAccelerometer(1) == 9.81){
@@ -173,20 +154,13 @@ public class HomeActivity extends Activity implements SensorEventListener{
                             xInitial = accelData.get(i).getAccelerometer(0);
                             yInitial = accelData.get(i).getAccelerometer(1);
                             zInitial = accelData.get(i).getAccelerometer(2);
-
-                            sCounter++;
                         }
                     }
                 }
 
                 else{
                     result = "Moving";
-                    mCounter++;
                 }
-
-                mDuration = mCounter/1000;
-                sDuration = sCounter/1000;
-
             if(i < gyroData.size()){
                 stringData.append(accelData.get(i).getAccelerometer(0));
                 stringData.append("," + accelData.get(i).getAccelerometer(1));
@@ -196,8 +170,6 @@ public class HomeActivity extends Activity implements SensorEventListener{
                 stringData.append("," + gyroData.get(i).getGyroscope(1));
                 stringData.append("," + gyroData.get(i).getGyroscope(2));
                 stringData.append("," + gyroData.get(i).getTime());
-                stringData.append("," + mDuration + " seconds moving");
-                stringData.append("," + sDuration + " seconds stationary");
                 stringData.append("," + result + "\n");
             }
         }
@@ -206,9 +178,10 @@ public class HomeActivity extends Activity implements SensorEventListener{
 
     }
 
-    private void logReadings(String readings){
+    public void logReadings(String readings){
         try{
-            File root = Environment.getExternalStorageDirectory();
+            File root = new File(Environment.getExternalStorageDirectory(),
+                    "TAGFtp");
             if(root.canWrite()){
                 System.out.println("Can Write");
                 date = new Date();
@@ -218,15 +191,11 @@ public class HomeActivity extends Activity implements SensorEventListener{
                 fileName = "mostrecent.csv";
                 File gpxfile = new File(root, fileName);
 
-                System.out.println(fileName.toString());
+                System.out.println(gpxfile.toString());
 
                 String file = fileName.toString();
 
-                Intent intent1 = new Intent(this, MainActivity.class);
-                intent1.putExtra("FILE",file);
-                intent1.putExtra("DATA", gpxfile);
-                startActivity(intent1);
-                //ftpChangeDirectory("/site/wwwroot");
+
 
                 FileWriter gpxWriter = new FileWriter(gpxfile);
 
@@ -234,6 +203,12 @@ public class HomeActivity extends Activity implements SensorEventListener{
                 out.write(readings);
                 Toast.makeText(this,"Data is Saved As:  " + fileName, Toast.LENGTH_LONG).show();
                 out.close();
+
+
+                Intent intent1 = new Intent(this, MainActivity.class);
+                intent1.putExtra("FILE",file);
+                startActivity(intent1);
+
             }else{
                 Toast.makeText(this, "SD Card Unavailable.", Toast.LENGTH_SHORT).show();
                 System.out.println("Can NOT write");

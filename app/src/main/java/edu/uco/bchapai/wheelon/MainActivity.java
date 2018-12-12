@@ -1,5 +1,9 @@
 package edu.uco.bchapai.wheelon;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -19,18 +23,15 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-
 public class MainActivity extends Activity implements OnClickListener {
 
     private static final String TAG = "MainActivity";
     public static String TEMP_FILENAME;
-    FileWriter gpxWriter;
     private Context cntx = null;
 
     private MyFTPClientFunctions ftpclient = null;
+
+    String path = "/site/wwwroot/";
 
     private Button btnLoginFtp, btnUploadFile, btnDisconnect, btnExit;
     private EditText edtHostName, edtUserName, edtPassword;
@@ -73,8 +74,6 @@ public class MainActivity extends Activity implements OnClickListener {
 
         Bundle extra = getIntent().getExtras();
         TEMP_FILENAME = extra.getString("FILE");
-        gpxWriter = extra.getParcelable("DATA");
-
 
         edtHostName = (EditText) findViewById(R.id.edtHostName);
         edtUserName = (EditText) findViewById(R.id.edtUserName);
@@ -91,7 +90,7 @@ public class MainActivity extends Activity implements OnClickListener {
         btnExit.setOnClickListener(this);
 
         // Create a temporary file. You can use this to upload
-        createDummyFile();
+//        createDummyFile();
 
         ftpclient = new MyFTPClientFunctions();
     }
@@ -116,7 +115,9 @@ public class MainActivity extends Activity implements OnClickListener {
                         status = ftpclient.ftpUpload(
                                 Environment.getExternalStorageDirectory()
                                         + "/TAGFtp/" + TEMP_FILENAME,
-                                TEMP_FILENAME, "/", cntx);
+                                TEMP_FILENAME, "ftp://wheelon%255Ccammedia@waws-prod-sn1-037.ftp.azurewebsites.windows.net/site/wwwroot/", cntx);
+                        System.out.println(MyFTPClientFunctions.ftpGetCurrentWorkingDirectory());
+
                         if (status == true) {
                             Log.d(TAG, "Upload success");
                             handler.sendEmptyMessage(2);
@@ -125,6 +126,8 @@ public class MainActivity extends Activity implements OnClickListener {
                             handler.sendEmptyMessage(-1);
                         }
                     }
+
+
                 }).start();
                 break;
             case R.id.btnDisconnectFtp:
@@ -196,25 +199,24 @@ public class MainActivity extends Activity implements OnClickListener {
         }).start();
     }
 
-    public void createDummyFile() {
-
-        try {
-            File root = new File(Environment.getExternalStorageDirectory(),
-                    "TAGFtp");
-            if (!root.exists()) {
-                root.mkdirs();
-            }
-            File gpxfile = new File(root, TEMP_FILENAME);
-            FileWriter writer = gpxWriter;
-            //writer.append("Hi this is a sample file to upload for android FTP client example from z!");
-            writer.flush();
-            writer.close();
-            Toast.makeText(this, "Saved : " + gpxfile.getAbsolutePath(),
-                    Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    public void createDummyFile() {
+//
+//        try {
+//            File root = new File(Environment.getExternalStorageDirectory(),
+//                    "TAGFtp");
+//            if (!root.exists()) {
+//                root.mkdirs();
+//            }
+//            File gpxfile = new File(root, TEMP_FILENAME);
+//            FileWriter writer = new FileWriter(gpxfile);
+//            writer.flush();
+//            writer.close();
+//            Toast.makeText(this, "Saved : " + gpxfile.getAbsolutePath(),
+//                    Toast.LENGTH_LONG).show();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     private boolean isOnline(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context

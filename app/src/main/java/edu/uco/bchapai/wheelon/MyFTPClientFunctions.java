@@ -16,7 +16,8 @@ public class MyFTPClientFunctions {
 	// Now, declare a public FTP client object.
 
 	private static final String TAG = "MyFTPClientFunctions";
-	public FTPClient mFTPClient = null;
+
+	public static FTPClient mFTPClient = null;
 
 	// Method to connect to FTP server:
 	public boolean ftpConnect(String host, String username, String password,
@@ -31,14 +32,6 @@ public class MyFTPClientFunctions {
 				// login using username & password
 				boolean status = mFTPClient.login(username, password);
 
-				/*
-				 * Set File Transfer Mode
-				 * F
-				 * To avoid corruption issue you must specified a correct
-				 * transfer mode, such as ASCII_FILE_TYPE, BINARY_FILE_TYPE,
-				 * EBCDIC_FILE_TYPE .etc. Here, I use BINARY_FILE_TYPE for
-				 * transferring text, image, and compressed files.
-				 */
 				mFTPClient.setFileType(FTP.BINARY_FILE_TYPE);
 				mFTPClient.enterLocalPassiveMode();
 				ftpChangeDirectory("/site/wwwroot");
@@ -67,7 +60,7 @@ public class MyFTPClientFunctions {
 
 	// Method to get current working directory:
 
-	public String ftpGetCurrentWorkingDirectory() {
+	public static String ftpGetCurrentWorkingDirectory() {
 		try {
 			String workingDir = mFTPClient.printWorkingDirectory();
 			return workingDir;
@@ -208,9 +201,9 @@ public class MyFTPClientFunctions {
 			FileInputStream srcFileStream = new FileInputStream(srcFilePath);
 
 			// change working directory to the destination directory
-			// if (ftpChangeDirectory(desDirectory)) {
-			status = mFTPClient.storeFile(desFileName, srcFileStream);
-			// }
+//			 if (ftpChangeDirectory(desDirectory)) {
+				 status = mFTPClient.storeFile(desFileName, srcFileStream);
+//			 }
 
 			srcFileStream.close();
 

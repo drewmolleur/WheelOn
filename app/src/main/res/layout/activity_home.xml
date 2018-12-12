@@ -76,7 +76,7 @@
 
     <Chronometer
         android:textColor="#601212"
-        android:layout_marginLeft="170dp"
+        android:layout_marginLeft="150dp"
         android:textSize="50sp"
         android:id="@+id/chrono"
         android:layout_width="wrap_content"
@@ -84,7 +84,7 @@
 
     <LinearLayout
         android:layout_marginLeft="20dp"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="20dp"
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
@@ -105,7 +105,7 @@
             android:background="@drawable/analyze" />
 
         <Button
-            android:layout_marginLeft="50dp"
+            android:layout_marginLeft="20dp"
             android:id="@+id/endbtn"
             android:layout_width="80dp"
             android:layout_height="80dp"
